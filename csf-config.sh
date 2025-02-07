@@ -19,6 +19,32 @@ update_csf_config() {
     sed -i "s/^$param = .*/$param = $value/" /etc/csf/csf.conf
 }
 
+# Função para reiniciar serviço e verificar status
+restart_service() {
+    local service_name=$1
+    echo "Reiniciando serviço $service_name..."
+    
+    service $service_name restart
+    local restart_status=$?
+    
+    if [ $restart_status -ne 0 ]; then
+        echo "ERRO: Falha ao reiniciar $service_name"
+        exit 1
+    fi
+    
+    # Aguarda até 30 segundos pelo serviço iniciar
+    for i in {1..30}; do
+        if service $service_name status >/dev/null 2>&1; then
+            echo "$service_name reiniciado com sucesso"
+            return 0
+        fi
+        sleep 1
+    done
+    
+    echo "ERRO: Timeout ao aguardar $service_name iniciar"
+    exit 1
+}
+
 echo "Configurando CSF..."
 
 # Atualiza as configurações no csf.conf
@@ -37,10 +63,19 @@ if ! id "csf" &>/dev/null; then
     echo "Usuário csf criado"
 fi
 
-# Reinicia os serviços
+# Reinicia os serviços e verifica status
 echo "Reiniciando serviços..."
 service csf restart
+if [ $? -ne 0 ]; then
+    echo "ERRO: Falha ao reiniciar CSF"
+    exit 1
+fi
+
 service lfd restart
+if [ $? -ne 0 ]; then
+    echo "ERRO: Falha ao reiniciar LFD"
+    exit 1
+fi
 
 # Aguarda alguns segundos para o CSF criar os diretórios
 echo "Aguardando a criação dos diretórios pelo CSF..."
