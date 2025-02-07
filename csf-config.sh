@@ -25,10 +25,21 @@ service lfd restart
 echo "Aguardando 5 segundos após restart do LFD..."
 sleep 5
 
-echo "Aguardando criação dos diretórios..."
-sleep 5
+echo "Aguardando e verificando criação dos diretórios..."
+max_attempts=30
+attempt=1
+while [ ! -d "/home/csf/public_html" ] && [ $attempt -le $max_attempts ]; do
+    echo "Tentativa $attempt de $max_attempts - Aguardando diretórios serem criados..."
+    sleep 2
+    attempt=$((attempt + 1))
+done
 
-echo "Baixando e aplicando arquivos personalizados..."
+if [ ! -d "/home/csf/public_html" ]; then
+    echo "ERRO: Diretório /home/csf/public_html não foi criado após $(($max_attempts * 2)) segundos"
+    exit 1
+fi
+
+echo "Diretórios criados com sucesso! Aplicando arquivos personalizados..."
 curl -s https://raw.githubusercontent.com/gustavohipolito/arquivos/main/en.php > /home/csf/en.php
 curl -s https://raw.githubusercontent.com/gustavohipolito/arquivos/main/index.php > /home/csf/public_html/index.php
 curl -s https://raw.githubusercontent.com/gustavohipolito/arquivos/main/recaptcha.php > /home/csf/recaptcha.php
