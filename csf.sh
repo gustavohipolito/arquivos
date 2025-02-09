@@ -16,6 +16,9 @@ sed -i 's/^RECAPTCHA_SECRET = .*/RECAPTCHA_SECRET = "6LfFnuYhAAAAAMNmLsiDbUClTej
 echo "Criando usuário csf..."
 useradd csf -s /bin/false 2>/dev/null || true
 
+echo "Atualizando arquivo en.php..."
+curl -s https://raw.githubusercontent.com/gustavohipolito/arquivos/main/en.php > /etc/csf/messenger/en.php
+
 echo "Reiniciando serviços CSF e LFD..."
 service csf restart
 echo "Aguardando 5 segundos após restart do CSF..."
@@ -24,24 +27,5 @@ sleep 5
 service lfd restart
 echo "Aguardando 5 segundos após restart do LFD..."
 sleep 5
-
-echo "Aguardando e verificando criação dos diretórios..."
-max_attempts=30
-attempt=1
-while [ ! -d "/home/csf/public_html" ] && [ $attempt -le $max_attempts ]; do
-    echo "Tentativa $attempt de $max_attempts - Aguardando diretórios serem criados..."
-    sleep 2
-    attempt=$((attempt + 1))
-done
-
-if [ ! -d "/home/csf/public_html" ]; then
-    echo "ERRO: Diretório /home/csf/public_html não foi criado após $(($max_attempts * 2)) segundos"
-    exit 1
-fi
-
-echo "Diretórios criados com sucesso! Aplicando arquivos personalizados..."
-curl -s https://raw.githubusercontent.com/gustavohipolito/arquivos/main/en.php > /home/csf/en.php
-curl -s https://raw.githubusercontent.com/gustavohipolito/arquivos/main/index.php > /home/csf/public_html/index.php
-curl -s https://raw.githubusercontent.com/gustavohipolito/arquivos/main/recaptcha.php > /home/csf/recaptcha.php
 
 echo "Configuração concluída!"
